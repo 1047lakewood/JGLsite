@@ -6,6 +6,7 @@ import {
   signOut,
   signUp as supabaseSignUp,
   getUserProfile,
+  createUserProfile,
   isSupabaseConfigured
 } from '../lib/supabase';
 import { Database } from '../types/database';
@@ -192,9 +193,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!isSupabaseConfigured) {
-      setError('Supabase credentials are not configured.');
+      const msg = 'Supabase credentials are not configured.';
+      setError(msg);
       setIsLoading(false);
-      return;
+      throw new Error(msg);
     }
 
     try {
@@ -223,6 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
       setIsLoading(false);
+      throw err instanceof Error ? err : new Error('Login failed');
     }
   };
 
@@ -256,7 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error } = await supabaseSignUp(email, password, {
+      const { data, error } = await supabaseSignUp(email, password, {
         email,
         first_name: firstName,
         last_name: lastName,
@@ -267,6 +270,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
 
+      const userId = data.user?.id;
+      if (userId) {
+        const { error: profileError } = await createUserProfile({
+          id: userId,
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          role: 'gymnast',
+        });
+        if (profileError) {
+          throw new Error(profileError.message);
+        }
+      } else {
+        throw new Error('Sign up succeeded but no user ID returned');
+      }
+
       // Automatically log the user in after successful signup
       const { error: loginError } = await signIn(email, password);
       if (loginError) {
@@ -275,6 +294,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed');
       setIsLoading(false);
+      throw err instanceof Error ? err : new Error('Sign up failed');
     }
   };
 

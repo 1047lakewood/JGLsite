@@ -114,6 +114,24 @@ export const getUserProfile = async (userId: string) => {
   return { data, error };
 };
 
+export const createUserProfile = async (
+  profile: Database['public']['Tables']['user_profiles']['Insert']
+) => {
+  devLog('[supabase] createUserProfile', profile);
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .insert(profile)
+    .single();
+
+  if (error) {
+    devError('[supabase] createUserProfile error:', error);
+  } else {
+    devLog('[supabase] createUserProfile id:', data?.id);
+  }
+
+  return { data, error };
+};
+
 export const getGymnastProfile = async (userId: string) => {
   devLog('[supabase] getGymnastProfile for', userId);
   const { data, error } = await supabase
