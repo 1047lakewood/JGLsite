@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { devLog, devError } from '../../lib/logger';
 
 interface SignupFormProps {
   onShowLogin: () => void;
@@ -18,9 +19,12 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onShowLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError('');
+    devLog('[signupForm] submit', email);
     try {
       await signUp(email, password, firstName, lastName);
+      devLog('[signupForm] signup complete');
     } catch (err) {
+      devError('[signupForm] error:', err);
       setLocalError(err instanceof Error ? err.message : 'Sign up failed');
     }
   };

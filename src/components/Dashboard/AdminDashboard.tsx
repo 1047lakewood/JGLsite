@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { Users, Calendar, Trophy, TrendingUp, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import {
+  Users,
+  Calendar,
+  Trophy,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from 'lucide-react';
 import { useEvents, useNotifications } from '../../hooks/useSupabaseData';
+import { devLog } from '../../lib/logger';
 
 interface AdminDashboardProps {
   onCreateEvent?: () => void;
@@ -45,12 +54,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleSendAnnouncement = () => {
-    console.log('Opening announcement modal');
+    devLog('[adminDashboard] open announcement modal');
     setShowAnnouncementModal(true);
   };
 
   const handleExportData = () => {
-    console.log('Opening export modal');
+    devLog('[adminDashboard] open export modal');
     setShowExportModal(true);
   };
 

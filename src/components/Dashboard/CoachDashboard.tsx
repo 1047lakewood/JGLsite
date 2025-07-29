@@ -4,6 +4,7 @@ import { Users, Calendar, CheckCircle, Clock, Trophy, Star } from 'lucide-react'
 import { useNotifications } from '../../hooks/useSupabaseData';
 import { useGymnastContext } from '../../contexts/GymnastContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { devLog } from '../../lib/logger';
 
 export const CoachDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -155,13 +156,13 @@ export const CoachDashboard: React.FC = () => {
       approved_by_coach_id: user?.id,
       membership_status: 'active'
     });
-    console.log('Gymnast approved, updated state');
+    devLog('[coachDashboard] gymnast approved', gymnastId);
   };
 
   const rejectGymnast = (gymnastId: string) => {
     if (confirm('Are you sure you want to reject this gymnast application?')) {
       removeGymnast(gymnastId);
-      console.log('Gymnast rejected and removed');
+      devLog('[coachDashboard] gymnast rejected', gymnastId);
     }
   };
 

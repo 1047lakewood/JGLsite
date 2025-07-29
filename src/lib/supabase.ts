@@ -1,13 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
-
-const devLog = (...args: unknown[]) => {
-  if (import.meta.env.DEV) console.log(...args);
-};
-
-const devError = (...args: unknown[]) => {
-  if (import.meta.env.DEV) console.error(...args);
-};
+import { devLog, devError } from './logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

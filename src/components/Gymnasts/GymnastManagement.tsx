@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Users, Search, Filter, CheckCircle, Clock, Plus, Mail } from 'lucide-react';
 import { useGymnastContext } from '../../contexts/GymnastContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { devLog, devError } from '../../lib/logger';
 
 export const GymnastManagement: React.FC = () => {
   const { user } = useAuth();
@@ -42,9 +43,9 @@ export const GymnastManagement: React.FC = () => {
         approved_by_coach_id: user?.id,
         membership_status: 'active'
       });
-      console.log('Gymnast approved in My Gymnasts tab');
+      devLog('[gymnastMgmt] gymnast approved', gymnastId);
     } catch (err) {
-      console.error('Failed to approve gymnast:', err);
+      devError('[gymnastMgmt] approve error', err);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GymnastProvider } from './contexts/GymnastContext';
 import { LandingPage } from './components/Layout/LandingPage';
@@ -13,12 +13,17 @@ import { GymnastManagement } from './components/Gymnasts/GymnastManagement';
 import { ChallengeSystem } from './components/Challenges/ChallengeSystem';
 import { GymManagement } from './components/Gyms/GymManagement';
 import { MemberManagement } from './components/Members/MemberManagement';
+import { devLog } from './lib/logger';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [authScreen, setAuthScreen] = useState<'login' | 'signup' | null>(null);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+
+  useEffect(() => {
+    devLog('[app] activeTab', activeTab);
+  }, [activeTab]);
 
   if (isLoading) {
     return (

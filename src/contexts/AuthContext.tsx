@@ -10,6 +10,7 @@ import {
   isSupabaseConfigured
 } from '../lib/supabase';
 import { Database } from '../types/database';
+import { devLog, devError } from '../lib/logger';
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'] & {
   gym?: Database['public']['Tables']['gyms']['Row'];
@@ -33,7 +34,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 if (import.meta.env.DEV) {
-  console.log('[auth] Supabase configured:', isSupabaseConfigured);
+  devLog('[auth] Supabase configured:', isSupabaseConfigured);
 }
 
 export const useAuth = () => {
@@ -93,12 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const log = (...args: unknown[]) => {
-    if (import.meta.env.DEV) console.log('[auth]', ...args);
-  };
-  const logError = (...args: unknown[]) => {
-    if (import.meta.env.DEV) console.error('[auth]', ...args);
-  };
+  const log = (...args: unknown[]) => devLog('[auth]', ...args);
+  const logError = (...args: unknown[]) => devError('[auth]', ...args);
 
   useEffect(() => {
     log('AuthProvider initializing');

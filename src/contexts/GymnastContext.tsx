@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { devLog, devError } from '../lib/logger';
 
 interface Gymnast {
   id: string;
@@ -53,7 +54,7 @@ export const GymnastProvider: React.FC<{ children: React.ReactNode }> = ({ child
       try {
         setGymnasts(JSON.parse(storedGymnasts));
       } catch (error) {
-        console.error('Error parsing stored gymnasts:', error);
+        devError('[gymnasts] failed parsing stored gymnasts:', error);
       }
     } else {
       // Initialize with demo data
@@ -109,7 +110,7 @@ export const GymnastProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (gymnasts.length >= 0) {
       localStorage.setItem('gymnasts', JSON.stringify(gymnasts));
-      console.log('Saved gymnasts to localStorage:', gymnasts.length);
+      devLog('[gymnasts] saved to localStorage:', gymnasts.length);
     }
   }, [gymnasts]);
 
@@ -121,19 +122,23 @@ export const GymnastProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addGymnast = (gymnast: Gymnast) => {
     setGymnasts(prev => [...prev, gymnast]);
-    console.log('Added gymnast:', gymnast.user?.first_name);
+    devLog('[gymnasts] added', gymnast.user?.first_name);
   };
 
   const updateGymnast = (id: string, updates: Partial<Gymnast>) => {
-    setGymnasts(prev => prev.map(g => 
-      g.id === id ? { ...g, ...updates, updated_at: new Date().toISOString() } : g
-    ));
-    console.log('Updated gymnast:', id, updates);
+    setGymnasts(prev =>
+      prev.map(g =>
+        g.id === id
+          ? { ...g, ...updates, updated_at: new Date().toISOString() }
+          : g
+      )
+    );
+    devLog('[gymnasts] updated', id, updates);
   };
 
   const removeGymnast = (id: string) => {
     setGymnasts(prev => prev.filter(g => g.id !== id));
-    console.log('Removed gymnast:', id);
+    devLog('[gymnasts] removed', id);
   };
 
   return (

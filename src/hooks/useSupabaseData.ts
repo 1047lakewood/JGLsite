@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../types/database';
+import { devError } from '../lib/logger';
 
 export type EventWithRelations = Database['public']['Tables']['events']['Row'] & {
   host_gym: Database['public']['Tables']['gyms']['Row'];
@@ -441,7 +442,7 @@ export const useNotifications = () => {
         )
       );
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      devError('[notifications] markAsRead failed:', err);
     }
   };
 
