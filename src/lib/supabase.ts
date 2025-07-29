@@ -64,6 +64,32 @@ export const signUp = async (
       emailConfirmation: false
     },
   });
+  if (!error && data.user) {
+    const profile = { ...userData, id: data.user.id, email };
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .insert(profile);
+    if (profileError) {
+      devError('[supabase] createUserProfile error:', profileError);
+      return { data, error: profileError };
+    }
+  }
+  return { data, error };
+};
+
+export const createUserProfile = async (
+  profile: Database['public']['Tables']['user_profiles']['Insert']
+) => {
+  devLog('[supabase] createUserProfile', profile.id);
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .insert(profile)
+    .single();
+  if (error) {
+    devError('[supabase] createUserProfile error:', error);
+  } else {
+    devLog('[supabase] createUserProfile result:', data);
+  }
   return { data, error };
 };
 

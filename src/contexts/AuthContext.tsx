@@ -6,6 +6,7 @@ import {
   signOut,
   signUp as supabaseSignUp,
   getUserProfile,
+  createUserProfile,
   isSupabaseConfigured
 } from '../lib/supabase';
 import { Database } from '../types/database';
@@ -160,7 +161,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await getUserProfile(userId);
       if (error) {
-        console.error('Error loading user profile:', error);
+        if (error.code === 'PGRST116' && authUser) {
+          const { data: newProfile, error: createErr } = await createUserProfile({
+            id: authUser.id,
+            email: authUser.email || '',
+            first_name: authUser.user_metadata?.first_name || '',
+            last_name: authUser.user_metadata?.last_name || '',
+            role: 'gymnast'
+          });
+          if (!createErr && newProfile) {
+            setUser(newProfile);
+            return;
+          }
+          console.error('Error creating profile:', createErr);
+        } else {
+          console.error('Error loading user profile:', error);
+        }
         setError('Failed to load user profile');
       } else if (data) {
         setUser(data);
