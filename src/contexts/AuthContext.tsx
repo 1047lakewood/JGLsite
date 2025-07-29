@@ -192,9 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!isSupabaseConfigured) {
-      setError('Supabase credentials are not configured.');
+      const msg = 'Supabase credentials are not configured.';
+      setError(msg);
       setIsLoading(false);
-      return;
+      throw new Error(msg);
     }
 
     try {
@@ -223,6 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
       setIsLoading(false);
+      throw err instanceof Error ? err : new Error('Login failed');
     }
   };
 
@@ -275,6 +277,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed');
       setIsLoading(false);
+      throw err instanceof Error ? err : new Error('Sign up failed');
     }
   };
 
