@@ -93,34 +93,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const log = (...args: unknown[]) => {
+    if (import.meta.env.DEV) console.log('[auth]', ...args);
+  };
+  const logError = (...args: unknown[]) => {
+    if (import.meta.env.DEV) console.error('[auth]', ...args);
+  };
+
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[auth] AuthProvider initializing');
-    }
+    log('AuthProvider initializing');
 
     // Check for demo mode first
     const demoUser = localStorage.getItem('demoUser');
     if (demoUser) {
       try {
         const parsedUser = JSON.parse(demoUser);
-        console.log('Found demo user in localStorage:', parsedUser);
+        log('Found demo user in localStorage:', parsedUser);
         setUser(parsedUser);
         setIsLoading(false);
         return;
       } catch (err) {
-        console.log('Error parsing demo user, removing:', err);
+        logError('Error parsing demo user, removing:', err);
         localStorage.removeItem('demoUser');
       }
     }
 
     // Get initial session
-    if (import.meta.env.DEV) {
-      console.log('[auth] Checking existing session');
-    }
+    log('Checking existing session');
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (import.meta.env.DEV) {
-        console.log('[auth] getSession result', session, error);
-      }
+      log('getSession result', session, error);
       if (session?.user) {
         setAuthUser(session.user);
         loadUserProfile(session.user.id);
@@ -132,9 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (import.meta.env.DEV) {
-          console.log('[auth] onAuthStateChange', event, session);
-        }
+        log('onAuthStateChange', event, session);
         if (session?.user) {
           setAuthUser(session.user);
           await loadUserProfile(session.user.id);
@@ -147,44 +146,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     return () => {
-      if (import.meta.env.DEV) {
-        console.log('[auth] auth subscription cleanup');
-      }
+      log('auth subscription cleanup');
       subscription.unsubscribe();
     };
   }, []);
 
   const loadUserProfile = async (userId: string) => {
-    if (import.meta.env.DEV) {
-      console.log('[auth] loadUserProfile', userId);
-    }
+    log('loadUserProfile', userId);
     try {
       const { data, error } = await getUserProfile(userId);
       if (error) {
-        console.error('Error loading user profile:', error);
+        logError('Error loading user profile:', error);
         setError('Failed to load user profile');
       } else if (data) {
         setUser(data);
       }
     } catch (err) {
-      console.error('Error loading user profile:', err);
+      logError('Error loading user profile:', err);
       setError('Failed to load user profile');
     } finally {
-      if (import.meta.env.DEV) {
-        console.log('[auth] loadUserProfile complete');
-      }
+      log('loadUserProfile complete');
       setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string) => {
-    console.log('Login attempt:', email, password);
+    log('login', email);
     setIsLoading(true);
     setError(null);
 
     // Demo credentials
     if (password === 'demo123' && demoUsers[email]) {
-      console.log('Using demo mode for:', email);
+      log('Using demo mode for:', email);
       const demoUser = demoUsers[email];
       setUser(demoUser);
       localStorage.setItem('demoUser', JSON.stringify(demoUser));
@@ -196,20 +189,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const msg = 'Supabase credentials are not configured.';
       setError(msg);
       setIsLoading(false);
+      logError(msg);
       throw new Error(msg);
     }
 
     try {
-      console.log('Attempting Supabase login...');
+      log('Attempting Supabase login...');
       const { error } = await signIn(email, password);
       if (error) {
-        console.error('Supabase login error:', error);
+        logError('Supabase login error:', error);
 
         if (error.message.includes('Email not confirmed') && password === 'demo123') {
-          console.log('Email not confirmed, checking for demo fallback...');
+          log('Email not confirmed, checking for demo fallback...');
           const demoUser = demoUsers[email];
           if (demoUser) {
-            console.log('Using demo fallback for:', email);
+            log('Using demo fallback for:', email);
             setUser(demoUser);
             localStorage.setItem('demoUser', JSON.stringify(demoUser));
             setIsLoading(false);
@@ -219,10 +213,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         throw new Error(error.message);
       }
-      console.log('Supabase login successful');
+      log('Supabase login successful');
       // User profile will be loaded via the auth state change listener
     } catch (err) {
-      console.error('Login failed:', err);
+      logError('Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
       setIsLoading(false);
       throw err instanceof Error ? err : new Error('Login failed');
@@ -259,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      log('signUp start', email);
       const { data, error } = await supabaseSignUp(email, password, {
         email,
         first_name: firstName,
@@ -270,14 +265,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
 
+      log('supabaseSignUp result', data, error);
+
       const userId = data.user?.id;
       if (!userId) {
-        throw new Error('Sign up succeeded but no user ID returned');
+        const msg = 'Sign up succeeded but no user ID returned';
+        logError(msg);
+        throw new Error(msg);
       }
 
       // Log the user in to satisfy RLS checks for profile creation
+      log('signing in immediately after signup');
       const { error: loginError } = await signIn(email, password);
       if (loginError) {
+        logError('login after signup failed:', loginError);
         throw new Error(loginError.message);
       }
 
@@ -289,9 +290,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: 'gymnast',
       });
       if (profileError) {
+        logError('createUserProfile error:', profileError);
         throw new Error(profileError.message);
       }
+      log('signUp complete');
     } catch (err) {
+      logError('signUp failed:', err);
       setError(err instanceof Error ? err.message : 'Sign up failed');
       setIsLoading(false);
       throw err instanceof Error ? err : new Error('Sign up failed');
@@ -299,7 +303,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    console.log('Logging out...');
+    log('logout');
     setError(null);
     
     // Clear demo user
@@ -308,7 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Sign out from Supabase
     const { error } = await signOut();
     if (error) {
-      console.error('Logout error:', error);
+      logError('Logout error:', error);
       setError(error.message);
     }
     

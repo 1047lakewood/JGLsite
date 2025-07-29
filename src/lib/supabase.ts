@@ -354,10 +354,11 @@ export const subscribeToRegistrations = (
     >
   ) => void
 ) => {
+  devLog('[supabase] subscribeToRegistrations');
   return supabase
     .channel('registrations')
-    .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'registrations' }, 
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'registrations' },
       callback
     )
     .subscribe();
@@ -371,12 +372,13 @@ export const subscribeToNotifications = (
     >
   ) => void
 ) => {
+  devLog('[supabase] subscribeToNotifications for', userId);
   return supabase
     .channel('notifications')
-    .on('postgres_changes', 
-      { 
-        event: 'INSERT', 
-        schema: 'public', 
+    .on('postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
         table: 'notifications',
         filter: `user_id=eq.${userId}`
       }, 
