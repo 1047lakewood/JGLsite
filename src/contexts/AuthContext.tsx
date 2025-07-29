@@ -271,25 +271,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const userId = data.user?.id;
-      if (userId) {
-        const { error: profileError } = await createUserProfile({
-          id: userId,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          role: 'gymnast',
-        });
-        if (profileError) {
-          throw new Error(profileError.message);
-        }
-      } else {
+      if (!userId) {
         throw new Error('Sign up succeeded but no user ID returned');
       }
 
-      // Automatically log the user in after successful signup
+      // Log the user in to satisfy RLS checks for profile creation
       const { error: loginError } = await signIn(email, password);
       if (loginError) {
         throw new Error(loginError.message);
+      }
+
+      const { error: profileError } = await createUserProfile({
+        id: userId,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'gymnast',
+      });
+      if (profileError) {
+        throw new Error(profileError.message);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed');

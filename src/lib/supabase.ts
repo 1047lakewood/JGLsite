@@ -121,6 +121,7 @@ export const createUserProfile = async (
   const { data, error } = await supabase
     .from('user_profiles')
     .insert(profile)
+    .select()
     .single();
 
   if (error) {
