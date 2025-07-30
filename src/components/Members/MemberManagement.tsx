@@ -139,7 +139,21 @@ export const MemberManagement: React.FC = () => {
         await updateMemberApi(editingMember.id, updates);
         await refetch();
       } else {
-        updateMemberLocal({ ...editingMember, ...formData, isActive: editingMember.isActive });
+        const updatedMember: MemberProfile = {
+          id: editingMember.id,
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role,
+          gym_id: formData.gymId || null,
+          phone: formData.phone || null,
+          date_of_birth: formData.dateOfBirth || null,
+          is_active: editingMember.isActive,
+          created_at: editingMember.createdAt,
+          updated_at: new Date().toISOString(),
+          gym: null
+        };
+        updateMemberLocal(updatedMember);
       }
       setEditingMember(null);
     } else {
@@ -164,7 +178,21 @@ export const MemberManagement: React.FC = () => {
         });
         await refetch();
       } else {
-        addMember(newMember as unknown as MemberProfile & Member);
+        const memberProfile: MemberProfile = {
+          id: newMember.id,
+          email: newMember.email,
+          first_name: newMember.firstName,
+          last_name: newMember.lastName,
+          role: newMember.role,
+          gym_id: newMember.gymId || null,
+          phone: newMember.phone || null,
+          date_of_birth: newMember.dateOfBirth || null,
+          is_active: true,
+          created_at: newMember.createdAt,
+          updated_at: newMember.createdAt,
+          gym: null
+        };
+        addMember(memberProfile);
       }
     }
     
