@@ -6,6 +6,7 @@ import {
   signOut,
   signUp as supabaseSignUp,
   getUserProfile,
+  createUserProfile,
   isSupabaseConfigured
 } from '../lib/supabase';
 import { Database } from '../types/database';
@@ -122,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           setAuthUser(session.user);
-          await loadUserProfile(session.user.id);
+          await loadUserProfile(session.user.id, session.user.email);
         } else {
           setIsLoading(false);
         }
@@ -156,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           setAuthUser(session.user);
-          await loadUserProfile(session.user.id);
+          await loadUserProfile(session.user.id, session.user.email);
         } else {
           setAuthUser(null);
           setUser(null);
@@ -175,21 +176,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, email?: string) => {
     if (import.meta.env.DEV) {
       console.log('[auth] loadUserProfile', userId);
     }
     try {
       const { data, error } = await getUserProfile(userId);
       console.log('[auth] getUserProfile result:', { data, error });
-      if (error) {
-        console.error('Error loading user profile:', error);
-        console.error('[auth] Profile loading failed, but continuing with authentication');
-      } else if (data) {
+      if (data) {
         console.log('[auth] Setting user profile:', data);
         setUser(data);
       } else {
-        console.warn('[auth] No user profile data returned');
+        if (import.meta.env.DEV) {
+          console.warn('[auth] No profile found, creating default');
+        }
+        const { data: newProfile, error: createError } = await createUserProfile({
+          id: userId,
+          email: email ?? '',
+          first_name: '',
+          last_name: '',
+          role: 'gymnast'
+        });
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+        }
+        setUser(newProfile ?? null);
       }
     } catch (err) {
       console.error('Error loading user profile:', err);
