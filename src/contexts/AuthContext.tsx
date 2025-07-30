@@ -100,6 +100,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const initializeAuth = async () => {
+      if (!isSupabaseConfigured) {
+        const stored = localStorage.getItem('demoUser');
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
+        setIsLoading(false);
+        return;
+      }
+
       try {
         if (import.meta.env.DEV) {
           console.log('[auth] Checking existing session');
@@ -146,24 +155,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (import.meta.env.DEV) {
-          console.log('[auth] onAuthStateChange', event, session);
+    let subscription: { unsubscribe: () => void } = { unsubscribe: () => {} };
+    if (isSupabaseConfigured) {
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (import.meta.env.DEV) {
+            console.log('[auth] onAuthStateChange', event, session);
+          }
+
+          if (!mounted) return;
+
+          if (session?.user) {
+            setAuthUser(session.user);
+            await loadUserProfile(session.user.id);
+          } else {
+            setAuthUser(null);
+            setUser(null);
+            setIsLoading(false);
+          }
         }
-        
-        if (!mounted) return;
-        
-        if (session?.user) {
-          setAuthUser(session.user);
-          await loadUserProfile(session.user.id);
-        } else {
-          setAuthUser(null);
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
+      );
+      subscription = sub;
+    }
 
     return () => {
       mounted = false;
@@ -171,7 +184,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (import.meta.env.DEV) {
         console.log('[auth] auth subscription cleanup');
       }
-      subscription.unsubscribe();
+      if (isSupabaseConfigured) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -208,10 +223,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
 
     try {
+      if (!isSupabaseConfigured) {
+        const demoUser = demoUsers[email];
+        if (demoUser && password === 'demo123') {
+          setUser(demoUser);
+          localStorage.setItem('demoUser', JSON.stringify(demoUser));
+          setIsLoading(false);
+          return;
+        }
+        throw new Error('Invalid email or password');
+      }
+
       console.log('[auth] Attempting Supabase signIn...');
       const { error } = await signIn(email, password);
       console.log('[auth] signIn response:', { error });
-      
+
       if (error) {
         console.error('[auth] Supabase login error:', error);
         throw new Error(error.message);
@@ -235,6 +261,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
 
     try {
+      if (!isSupabaseConfigured) {
+        const newUser: UserProfile = {
+          id: crypto.randomUUID(),
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          role: 'gymnast',
+          gym_id: null,
+          phone: null,
+          date_of_birth: null,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setUser(newUser);
+        localStorage.setItem('demoUser', JSON.stringify(newUser));
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await supabaseSignUp(email, password, {
         id: crypto.randomUUID(),
         email,
@@ -258,12 +304,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     console.log('Logging out...');
     setError(null);
-    
-    // Sign out from Supabase
-    const { error } = await signOut();
-    if (error) {
-      console.error('Logout error:', error);
-      setError(error.message);
+
+    if (!isSupabaseConfigured) {
+      localStorage.removeItem('demoUser');
+    } else {
+      const { error } = await signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        setError(error.message);
+      }
     }
     
     // Reset state
