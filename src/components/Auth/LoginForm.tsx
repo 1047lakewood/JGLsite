@@ -26,11 +26,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onShowSignup }) => {
     }
   };
 
-  const demoAccounts = [
-    { email: 'admin@demo.com', role: 'League Admin', password: 'demo123' },
-    { email: 'coach@demo.com', role: 'Coach', password: 'demo123' },
-    { email: 'gymnast@demo.com', role: 'Gymnast', password: 'demo123' },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -121,29 +116,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onShowSignup }) => {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-gray-200/50">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4 text-center">Quick Demo Access</h3>
-            <div className="space-y-2">
-              {demoAccounts.map((account, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setEmail(account.email);
-                    setPassword(account.password);
-                  }}
-                  className="w-full text-left px-4 py-3 text-sm bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-200 border border-gray-200 hover:border-blue-200 hover:shadow-md"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-gray-900">{account.role}</div>
-                      <div className="text-gray-600 text-xs">{account.email}</div>
-                    </div>
-                    <div className="text-xs text-gray-400">Click to use</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="mt-6 text-center text-sm text-gray-600">
             <button onClick={onShowSignup} className="text-blue-600 hover:underline" type="button">
               Need an account? Sign up

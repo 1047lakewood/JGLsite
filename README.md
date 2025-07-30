@@ -91,7 +91,7 @@ Visit `http://localhost:5173` to see the application.
 
 When running the app in development mode, the browser console logs whether your
 `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` variables were detected. If
-they are missing, the application falls back to demo data.
+they are missing, the application will not load data from Supabase.
 
 Additional `[auth]` and `[supabase]` messages now show the steps taken when the
 application checks the current session and loads the user profile. Watch the
@@ -244,7 +244,6 @@ This project is licensed under the MIT License.
 For support and questions:
 - Check the documentation
 - Review the database schema
-- Test with demo accounts
 - Contact the development team
 
 ---

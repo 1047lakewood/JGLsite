@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Building2, MapPin, Phone, Mail, Globe, CheckCircle, Clock, Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
 import { useGyms, Gym } from '../../hooks/useSupabaseData';
 import { useAuth } from '../../contexts/AuthContext';
-import { isSupabaseConfigured, createGym as createGymApi, updateGym as updateGymApi, deleteGym as deleteGymApi } from '../../lib/supabase';
+import { createGym as createGymApi, updateGym as updateGymApi, deleteGym as deleteGymApi } from '../../lib/supabase';
 import type { Database } from '../../types/database';
 
 export const GymManagement: React.FC = () => {
   const { user } = useAuth();
-  const { gyms, loading, error, refetch, addGym, updateGym: updateGymLocal, removeGym } = useGyms();
+  const { gyms, loading, error, refetch } = useGyms();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingGym, setEditingGym] = useState<Gym | null>(null);
@@ -52,47 +52,28 @@ export const GymManagement: React.FC = () => {
   });
 
   const approveGym = async (gymId: string) => {
-    if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-      await updateGymApi(gymId, { is_approved: true });
-      await refetch();
-    } else {
-      const g = gyms.find((gm) => gm.id === gymId);
-      if (g) {
-        updateGymLocal({ ...g, is_approved: true });
-      }
-    }
+    await updateGymApi(gymId, { is_approved: true });
+    await refetch();
   };
 
   const rejectGym = async (gymId: string) => {
     if (confirm('Are you sure you want to reject this gym application?')) {
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await deleteGymApi(gymId);
-        await refetch();
-      } else {
-        removeGym(gymId);
-      }
+      await deleteGymApi(gymId);
+      await refetch();
     }
   };
 
   const handleDeleteGym = async (gymId: string) => {
     if (confirm('Are you sure you want to delete this gym? This action cannot be undone.')) {
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await deleteGymApi(gymId);
-        await refetch();
-      } else {
-        removeGym(gymId);
-      }
+      await deleteGymApi(gymId);
+      await refetch();
     }
   };
 
   const toggleVisibility = async (gym: Gym) => {
     const newStatus = !gym.is_approved;
-    if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-      await updateGymApi(gym.id, { is_approved: newStatus });
-      await refetch();
-    } else {
-      updateGymLocal({ ...gym, is_approved: newStatus });
-    }
+    await updateGymApi(gym.id, { is_approved: newStatus });
+    await refetch();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,12 +91,8 @@ export const GymManagement: React.FC = () => {
         website: formData.website || null,
         updated_at: new Date().toISOString(),
       };
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await updateGymApi(editingGym.id, updates);
-        await refetch();
-      } else {
-        updateGymLocal({ ...editingGym, ...updates } as Gym);
-      }
+      await updateGymApi(editingGym.id, updates);
+      await refetch();
       setEditingGym(null);
     } else {
       // Create new gym
@@ -131,17 +108,8 @@ export const GymManagement: React.FC = () => {
         is_approved: false,
         admin_id: user?.id || null,
       };
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await createGymApi(newGym);
-        await refetch();
-      } else {
-        addGym({
-          ...(newGym as Gym),
-          id: `demo-${Date.now()}`,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as Gym);
-      }
+      await createGymApi(newGym);
+      await refetch();
     }
     
     setFormData({

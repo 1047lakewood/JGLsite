@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, DollarSign, Plus, Edit, Eye, Trash2 } from 'lucide-react';
-import { useEvents, EventWithRelations } from '../../hooks/useSupabaseData';
-import {
-  isSupabaseConfigured,
-  createEvent,
-  updateEvent as updateEventApi,
-  deleteEvent as deleteEventApi,
-} from '../../lib/supabase';
+import { useEvents, useGyms, EventWithRelations } from '../../hooks/useSupabaseData';
+import { createEvent, updateEvent as updateEventApi, deleteEvent as deleteEventApi } from '../../lib/supabase';
 import type { Database } from '../../types/database';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -20,7 +15,8 @@ export const EventManagement: React.FC<EventManagementProps> = ({
   onCreateFormClose,
 }) => {
   const { user } = useAuth();
-  const { events, loading, error, refetch, addEvent, updateEvent, removeEvent } = useEvents();
+  const { events, loading, error, refetch } = useEvents();
+  const { gyms } = useGyms();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventWithRelations | null>(null);
   const [formData, setFormData] = useState({
@@ -28,6 +24,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({
     event_date: '',
     description: '',
     location: '',
+    host_gym_id: '',
     entry_fee: 0,
     ticket_price: 0,
     max_participants: '',
@@ -75,6 +72,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({
         description: formData.description || null,
         event_date: formData.event_date,
         location: formData.location,
+        host_gym_id: formData.host_gym_id || user?.gym_id || '',
         registration_deadline: formData.registration_deadline,
         max_participants: formData.max_participants
           ? Number(formData.max_participants)
@@ -84,19 +82,12 @@ export const EventManagement: React.FC<EventManagementProps> = ({
         updated_at: new Date().toISOString(),
       };
 
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        const { error } = await updateEventApi(editingEvent.id, updates);
-        if (error) {
-          alert('Failed to update event: ' + error.message);
-          return;
-        }
-        await refetch();
-      } else {
-        updateEvent({
-          ...editingEvent,
-          ...updates,
-        } as EventWithRelations);
+      const { error } = await updateEventApi(editingEvent.id, updates);
+      if (error) {
+        alert('Failed to update event: ' + error.message);
+        return;
       }
+      await refetch();
     } else {
       const newEvent: Database['public']['Tables']['events']['Insert'] = {
         title: formData.title,
@@ -104,7 +95,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({
         event_date: formData.event_date,
         event_time: null,
         location: formData.location,
-        host_gym_id: user?.gym_id || '',
+        host_gym_id: formData.host_gym_id || user?.gym_id || '',
         registration_deadline: formData.registration_deadline,
         max_participants: formData.max_participants
           ? Number(formData.max_participants)
@@ -117,29 +108,12 @@ export const EventManagement: React.FC<EventManagementProps> = ({
         created_by: user?.id || '',
       };
 
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        const { error } = await createEvent(newEvent);
-        if (error) {
-          alert('Failed to create event: ' + error.message);
-          return;
-        }
-        await refetch();
-      } else {
-        addEvent({
-          ...newEvent,
-          id: `demo-${Date.now()}`,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          host_gym: {
-            name: user?.gym?.name || 'Demo Gym',
-            city: user?.gym?.city || 'Demo City',
-          },
-          creator: {
-            first_name: user?.first_name || 'Demo',
-            last_name: user?.last_name || 'User',
-          },
-        } as EventWithRelations);
+      const { error } = await createEvent(newEvent);
+      if (error) {
+        alert('Failed to create event: ' + error.message);
+        return;
       }
+      await refetch();
     }
 
     setFormData({
@@ -147,6 +121,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({
       event_date: '',
       description: '',
       location: '',
+      host_gym_id: '',
       entry_fee: 0,
       ticket_price: 0,
       max_participants: '',
@@ -164,6 +139,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({
       event_date: event.event_date,
       description: event.description || '',
       location: event.location,
+      host_gym_id: event.host_gym_id,
       entry_fee: event.entry_fee,
       ticket_price: event.ticket_price,
       max_participants: event.max_participants ? String(event.max_participants) : '',
@@ -174,30 +150,22 @@ export const EventManagement: React.FC<EventManagementProps> = ({
 
   const toggleVisibility = async (event: EventWithRelations) => {
     const newStatus = event.status === 'draft' ? 'open' : 'draft';
-    if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-      const { error } = await updateEventApi(event.id, { status: newStatus });
-      if (error) {
-        alert('Failed to update event: ' + error.message);
-        return;
-      }
-      await refetch();
-    } else {
-      updateEvent({ ...event, status: newStatus });
+    const { error } = await updateEventApi(event.id, { status: newStatus });
+    if (error) {
+      alert('Failed to update event: ' + error.message);
+      return;
     }
+    await refetch();
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        const { error } = await deleteEventApi(eventId);
-        if (error) {
-          alert('Failed to delete event: ' + error.message);
-          return;
-        }
-        await refetch();
-      } else {
-        removeEvent(eventId);
+      const { error } = await deleteEventApi(eventId);
+      if (error) {
+        alert('Failed to delete event: ' + error.message);
+        return;
       }
+      await refetch();
     }
   };
 
@@ -326,13 +294,23 @@ export const EventManagement: React.FC<EventManagementProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                <select
+                  value={formData.host_gym_id}
+                  onChange={(e) => {
+                    const gym = gyms.find(g => g.id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      host_gym_id: e.target.value,
+                      location: gym?.name || '',
+                    });
+                  }}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter event location"
-                />
+                >
+                  <option value="">Select gym</option>
+                  {gyms.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

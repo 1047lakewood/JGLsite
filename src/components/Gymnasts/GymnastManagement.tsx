@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Search, Filter, CheckCircle, Clock, Plus, Mail } from 'lucide-react';
 import { useGymnasts } from '../../hooks/useSupabaseData';
-import { updateGymnast, isSupabaseConfigured } from '../../lib/supabase';
+import { updateGymnast } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const GymnastManagement: React.FC = () => {
@@ -45,17 +45,13 @@ export const GymnastManagement: React.FC = () => {
 
   const approveGymnast = async (gymnastId: string) => {
     try {
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await updateGymnast(gymnastId, {
-          approved_by_coach: true,
-          approved_by_coach_at: new Date().toISOString(),
-          approved_by_coach_id: user?.id || null,
-          membership_status: 'active',
-        });
-        await refetch();
-      } else {
-        console.log('Gymnast approved in demo mode');
-      }
+      await updateGymnast(gymnastId, {
+        approved_by_coach: true,
+        approved_by_coach_at: new Date().toISOString(),
+        approved_by_coach_id: user?.id || null,
+        membership_status: 'active',
+      });
+      await refetch();
     } catch (err) {
       console.error('Failed to approve gymnast:', err);
     }

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { GymnastProvider } from './contexts/GymnastContext';
 import { LandingPage } from './components/Layout/LandingPage';
 import { LoginForm } from './components/Auth/LoginForm';
 import { SignupForm } from './components/Auth/SignupForm';
@@ -121,9 +120,7 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <GymnastProvider>
-        <AppContent />
-      </GymnastProvider>
+      <AppContent />
     </AuthProvider>
   );
 }

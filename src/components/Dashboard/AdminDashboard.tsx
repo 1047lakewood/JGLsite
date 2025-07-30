@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Calendar, Trophy, TrendingUp, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { useEvents, useNotifications } from '../../hooks/useSupabaseData';
+import { useEvents, useNotifications, useMembers } from '../../hooks/useSupabaseData';
 
 interface AdminDashboardProps {
   onCreateEvent?: () => void;
@@ -10,6 +10,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCreateEvent = () => alert('Create event feature coming soon!'),
 }) => {
   const { events } = useEvents();
+  const { members } = useMembers();
   const { notifications } = useNotifications();
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -61,14 +62,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportMembers = () => {
-    // Create CSV data for members
     const membersData = [
       ['Name', 'Email', 'Role', 'Gym', 'Status', 'Join Date'],
-      ['League Administrator', 'admin@demo.com', 'Admin', 'N/A', 'Active', '2024-01-01'],
-      ['Sarah Johnson', 'coach@demo.com', 'Coach', 'Elite Gymnastics Center', 'Active', '2024-01-15'],
-      ['Emma Davis', 'gymnast@demo.com', 'Gymnast', 'Elite Gymnastics Center', 'Active', '2024-02-01'],
-      ['Michael Chen', 'michael.chen@email.com', 'Gym Admin', 'Metro Sports Complex', 'Active', '2024-02-05'],
-      ['Olivia Wilson', 'olivia.wilson@email.com', 'Gymnast', 'Elite Gymnastics Center', 'Pending', '2024-03-01']
+      ...members.map(m => [
+        `${m.first_name} ${m.last_name}`,
+        m.email,
+        m.role,
+        m.gym?.name || 'N/A',
+        m.is_active ? 'Active' : 'Inactive',
+        new Date(m.created_at).toLocaleDateString()
+      ])
     ];
     
     const csvContent = membersData.map(row => row.join(',')).join('\n');
@@ -87,13 +90,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportEvents = () => {
-    // Create CSV data for events
     const eventsData = [
       ['Event Name', 'Date', 'Location', 'Host Gym', 'Entry Fee', 'Ticket Price', 'Status', 'Max Participants'],
-      ['Spring Championship 2024', '2024-04-15', 'Elite Gymnastics Center', 'Elite Gymnastics Center', '$25', '$10', 'Open', '100'],
-      ['Regional Qualifier', '2024-05-20', 'Metro Sports Complex', 'Metro Sports Complex', '$30', '$15', 'Open', '75'],
-      ['Summer Invitational', '2024-06-10', 'Sunshine Gymnastics Academy', 'Sunshine Gymnastics Academy', '$20', '$8', 'Draft', '50'],
-      ['Fall Classic', '2024-09-15', 'Pacific Coast Gymnastics', 'Pacific Coast Gymnastics', '$35', '$12', 'Draft', '80']
+      ...events.map(e => [
+        e.title,
+        new Date(e.event_date).toLocaleDateString(),
+        e.location,
+        e.host_gym?.name || '',
+        `$${e.entry_fee}`,
+        `$${e.ticket_price}`,
+        e.status,
+        e.max_participants || ''
+      ])
     ];
     
     const csvContent = eventsData.map(row => row.join(',')).join('\n');

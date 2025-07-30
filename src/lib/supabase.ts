@@ -21,7 +21,7 @@ if (import.meta.env.DEV) {
   if (isSupabaseConfigured) {
     devLog('[supabase] Client initialized with provided credentials');
   } else {
-    devError('[supabase] Missing credentials, using demo client');
+    devError('[supabase] Missing credentials');
   }
 }
 
@@ -43,10 +43,11 @@ const loggingFetch = async (url: string, options?: RequestInit) => {
   }
 };
 
-export const supabase: SupabaseClient<Database> = isSupabaseConfigured
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey, { global: { fetch: loggingFetch } })
-  // @ts-expect-error - create a dummy client to avoid runtime crashes in demo mode
-  : (createClient('https://demo.supabase.co', 'demo-key', { global: { fetch: loggingFetch } }) as SupabaseClient<Database>);
+export const supabase: SupabaseClient<Database> = createClient<Database>(
+  supabaseUrl || '',
+  supabaseAnonKey || '',
+  { global: { fetch: loggingFetch } }
+);
 
 // Auth helpers
 export const signUp = async (

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Plus, Edit, Trash2, Trophy } from 'lucide-react';
-import { useMembers, MemberProfile } from '../../hooks/useSupabaseData';
-import { useAuth } from '../../contexts/AuthContext';
+import { useMembers } from '../../hooks/useSupabaseData';
 import {
-  isSupabaseConfigured,
   createMember as createMemberApi,
   updateMember as updateMemberApi,
   deleteMember as deleteMemberApi
@@ -29,14 +27,7 @@ interface Member {
 }
 
 export const MemberManagement: React.FC = () => {
-  const { user } = useAuth();
-  const {
-    members,
-    refetch,
-    addMember,
-    updateMember: updateMemberLocal,
-    removeMember
-  } = useMembers();
+  const { members, refetch } = useMembers();
 
   const memberList: Member[] = members.map(m => {
     const extra = m as unknown as {
@@ -101,22 +92,14 @@ export const MemberManagement: React.FC = () => {
     if (!member) return;
 
     const newStatus = !member.isActive;
-    if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-      await updateMemberApi(memberId, { is_active: newStatus });
-      await refetch();
-    } else {
-      updateMemberLocal({ ...member, isActive: newStatus });
-    }
+    await updateMemberApi(memberId, { is_active: newStatus });
+    await refetch();
   };
 
   const deleteMember = async (memberId: string) => {
     if (confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await deleteMemberApi(memberId);
-        await refetch();
-      } else {
-        removeMember(memberId);
-      }
+      await deleteMemberApi(memberId);
+      await refetch();
     }
   };
 
@@ -135,12 +118,8 @@ export const MemberManagement: React.FC = () => {
         date_of_birth: formData.dateOfBirth || null,
         is_active: editingMember.isActive
       };
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await updateMemberApi(editingMember.id, updates);
-        await refetch();
-      } else {
-        updateMemberLocal({ ...editingMember, ...formData, isActive: editingMember.isActive });
-      }
+      await updateMemberApi(editingMember.id, updates);
+      await refetch();
       setEditingMember(null);
     } else {
       // Create new member
@@ -150,22 +129,18 @@ export const MemberManagement: React.FC = () => {
         isActive: true,
         createdAt: new Date().toISOString().split('T')[0]
       };
-      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
-        await createMemberApi({
-          id: newMember.id,
-          first_name: newMember.firstName,
-          last_name: newMember.lastName,
-          email: newMember.email,
-          role: newMember.role,
-          gym_id: newMember.gymId || null,
-          phone: newMember.phone || null,
-          date_of_birth: newMember.dateOfBirth || null,
-          is_active: true
-        });
-        await refetch();
-      } else {
-        addMember(newMember as unknown as MemberProfile & Member);
-      }
+      await createMemberApi({
+        id: newMember.id,
+        first_name: newMember.firstName,
+        last_name: newMember.lastName,
+        email: newMember.email,
+        role: newMember.role,
+        gym_id: newMember.gymId || null,
+        phone: newMember.phone || null,
+        date_of_birth: newMember.dateOfBirth || null,
+        is_active: true
+      });
+      await refetch();
     }
     
     setFormData({

@@ -1,13 +1,10 @@
 import React from 'react';
 import { useState } from 'react';
 import { Users, Calendar, CheckCircle, Clock, Trophy, Star } from 'lucide-react';
-import { useNotifications } from '../../hooks/useSupabaseData';
-import { useGymnastContext } from '../../contexts/GymnastContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications, useGymnasts } from '../../hooks/useSupabaseData';
 
 export const CoachDashboard: React.FC = () => {
-  const { user } = useAuth();
-  const { gymnasts, addGymnast, updateGymnast, removeGymnast } = useGymnastContext();
+  const { gymnasts } = useGymnasts();
   const { notifications } = useNotifications();
   const [showAddGymnastModal, setShowAddGymnastModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -59,32 +56,8 @@ export const CoachDashboard: React.FC = () => {
       return;
     }
 
-    const newGymnast = {
-      id: `gymnast-${Date.now()}`,
-      user_id: `user-${Date.now()}`,
-      gym_id: getGymIdFromTeam(gymnastData.teamName),
-      level: gymnastData.level,
-      is_team_member: true,
-      team_name: gymnastData.teamName,
-      approved_by_coach: false,
-      approved_by_coach_at: null,
-      approved_by_coach_id: null,
-      membership_status: 'pending' as const,
-      total_points: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      user: {
-        first_name: gymnastData.firstName,
-        last_name: gymnastData.lastName,
-        email: gymnastData.email,
-        date_of_birth: gymnastData.dateOfBirth
-      }
-    };
-    
-    addGymnast(newGymnast);
-    alert(`Gymnast ${gymnastData.firstName} ${gymnastData.lastName} added successfully!`);
+    alert('Gymnast creation not implemented.');
     setShowAddGymnastModal(false);
-    setGymnastData({ firstName: '', lastName: '', email: '', level: '', dateOfBirth: '', teamName: '' });
   };
 
   const handleExportTeamReport = () => {
@@ -148,37 +121,18 @@ export const CoachDashboard: React.FC = () => {
     setShowExportModal(false);
   };
 
-  const approveGymnast = (gymnastId: string) => {
-    updateGymnast(gymnastId, {
-      approved_by_coach: true,
-      approved_by_coach_at: new Date().toISOString(),
-      approved_by_coach_id: user?.id,
-      membership_status: 'active'
-    });
-    console.log('Gymnast approved, updated state');
+  const approveGymnast = () => {
+    console.log('Gymnast approval not implemented');
   };
 
-  const rejectGymnast = (gymnastId: string) => {
+  const rejectGymnast = () => {
     if (confirm('Are you sure you want to reject this gymnast application?')) {
-      removeGymnast(gymnastId);
-      console.log('Gymnast rejected and removed');
+      console.log('Gymnast rejection not implemented');
     }
   };
 
   // Get gym ID based on team selection
-  const getGymIdFromTeam = (teamName: string) => {
-    switch (teamName) {
-      case 'Team Spring': return 'gym-spring';
-      case 'Team Tovi\'s': return 'gym-tovis';
-      case 'Team Elite': return 'gym-elite';
-      case 'Team Metro': return 'gym-metro';
-      case 'Team Sunshine': return 'gym-sunshine';
-      case 'Team Pacific': return 'gym-pacific';
-      default: return 'gym-elite';
-    }
-  };
-
-  // Get coach's team name based on their gym
+  // Team helper not implemented
 
   return (
     <div className="space-y-6">
