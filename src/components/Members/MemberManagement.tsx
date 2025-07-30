@@ -1,114 +1,12 @@
 import React, { useState } from 'react';
 import { Search, Filter, Plus, Edit, Trash2, Trophy } from 'lucide-react';
-
-interface Member {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: 'admin' | 'gym_admin' | 'coach' | 'gymnast' | 'host';
-  gymId?: string;
-  gymName?: string;
-  phone?: string;
-  dateOfBirth?: string;
-  level?: string;
-  isActive: boolean;
-  totalPoints?: number;
-  membershipStatus?: 'pending' | 'active' | 'inactive' | 'suspended';
-  approvedByCoach?: boolean;
-  createdAt: string;
-  lastLogin?: string;
-}
+import { useMembers, Member } from '../../hooks/useSupabaseData';
+import { isSupabaseConfigured, createMember as createMemberApi, updateMember as updateMemberApi, deleteMember as deleteMemberApi } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const MemberManagement: React.FC = () => {
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: 'member-1',
-      firstName: 'League',
-      lastName: 'Administrator',
-      email: 'admin@demo.com',
-      role: 'admin',
-      phone: '(555) 123-4567',
-      isActive: true,
-      createdAt: '2024-01-01',
-      lastLogin: '2024-03-15'
-    },
-    {
-      id: 'member-2',
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'coach@demo.com',
-      role: 'coach',
-      gymId: 'gym-1',
-      gymName: 'Elite Gymnastics Center',
-      phone: '(555) 234-5678',
-      isActive: true,
-      createdAt: '2024-01-15',
-      lastLogin: '2024-03-14'
-    },
-    {
-      id: 'member-3',
-      firstName: 'Emma',
-      lastName: 'Davis',
-      email: 'gymnast@demo.com',
-      role: 'gymnast',
-      gymId: 'gym-1',
-      gymName: 'Elite Gymnastics Center',
-      phone: '(555) 345-6789',
-      dateOfBirth: '2010-05-15',
-      level: 'Level 5',
-      isActive: true,
-      totalPoints: 450,
-      membershipStatus: 'active',
-      approvedByCoach: true,
-      createdAt: '2024-02-01',
-      lastLogin: '2024-03-13'
-    },
-    {
-      id: 'member-4',
-      firstName: 'Michael',
-      lastName: 'Chen',
-      email: 'michael.chen@email.com',
-      role: 'gym_admin',
-      gymId: 'gym-2',
-      gymName: 'Metro Sports Complex',
-      phone: '(555) 456-7890',
-      isActive: true,
-      createdAt: '2024-02-05',
-      lastLogin: '2024-03-12'
-    },
-    {
-      id: 'member-5',
-      firstName: 'Olivia',
-      lastName: 'Wilson',
-      email: 'olivia.wilson@email.com',
-      role: 'gymnast',
-      gymId: 'gym-1',
-      gymName: 'Elite Gymnastics Center',
-      phone: '(555) 567-8901',
-      dateOfBirth: '2012-08-22',
-      level: 'Level 4',
-      isActive: true,
-      totalPoints: 280,
-      membershipStatus: 'pending',
-      approvedByCoach: false,
-      createdAt: '2024-03-01',
-      lastLogin: '2024-03-10'
-    },
-    {
-      id: 'member-6',
-      firstName: 'David',
-      lastName: 'Rodriguez',
-      email: 'david.rodriguez@email.com',
-      role: 'coach',
-      gymId: 'gym-3',
-      gymName: 'Sunshine Gymnastics Academy',
-      phone: '(555) 678-9012',
-      isActive: false,
-      createdAt: '2024-02-20',
-      lastLogin: '2024-02-25'
-    }
-  ]);
+  const { user } = useAuth();
+  const { members, addMember, updateMember, removeMember, refetch } = useMembers();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
@@ -141,39 +39,73 @@ export const MemberManagement: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const toggleMemberStatus = (memberId: string) => {
-    setMembers(prev => prev.map(member => 
-      member.id === memberId ? { ...member, isActive: !member.isActive } : member
-    ));
-  };
-
-  const deleteMember = (memberId: string) => {
-    if (confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
-      setMembers(prev => prev.filter(member => member.id !== memberId));
+  const toggleMemberStatus = async (memberId: string) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    const updated = { ...member, isActive: !member.isActive };
+    if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
+      await updateMemberApi(memberId, { is_active: updated.isActive });
+      await refetch();
+    } else {
+      updateMember(updated);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const deleteMember = async (memberId: string) => {
+    if (confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
+      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
+        await deleteMemberApi(memberId);
+        await refetch();
+      } else {
+        removeMember(memberId);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingMember) {
-      // Update existing member
-      setMembers(prev => prev.map(member => 
-        member.id === editingMember.id 
-          ? { ...member, ...formData }
-          : member
-      ));
+      const updated: Member = { ...editingMember, ...formData };
+      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
+        await updateMemberApi(editingMember.id, {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          role: formData.role,
+          gym_id: formData.gymId || null,
+          phone: formData.phone || null,
+          date_of_birth: formData.dateOfBirth || null,
+        });
+        await refetch();
+      } else {
+        updateMember(updated);
+      }
       setEditingMember(null);
     } else {
-      // Create new member
       const newMember: Member = {
         id: `member-${Date.now()}`,
         ...formData,
         isActive: true,
         createdAt: new Date().toISOString().split('T')[0],
-        gymName: formData.gymId ? 'Selected Gym' : undefined
+        gymName: formData.gymId ? 'Selected Gym' : undefined,
       };
-      setMembers(prev => [...prev, newMember]);
+      if (isSupabaseConfigured && !user?.id?.startsWith('demo-')) {
+        await createMemberApi({
+          id: crypto.randomUUID(),
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role,
+          gym_id: formData.gymId || null,
+          phone: formData.phone || null,
+          date_of_birth: formData.dateOfBirth || null,
+          is_active: true,
+        });
+        await refetch();
+      } else {
+        addMember(newMember);
+      }
     }
     
     setFormData({
