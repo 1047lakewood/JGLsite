@@ -372,6 +372,74 @@ export const updateEvent = async (
   return { data, error };
 };
 
+// Member helpers
+export const getMembers = async () => {
+  devLog('[supabase] getMembers');
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select(
+      `*,
+      gym:gyms(*),
+      gymnast:gymnasts(*)`
+    )
+    .order('created_at', { ascending: false });
+  if (error) {
+    devError('[supabase] getMembers error:', error);
+  } else {
+    devLog('[supabase] getMembers result count:', data?.length);
+  }
+  return { data, error };
+};
+
+export const createMember = async (
+  member: Database['public']['Tables']['user_profiles']['Insert']
+) => {
+  devLog('[supabase] createMember', member);
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .insert(member)
+    .single();
+  if (error) {
+    devError('[supabase] createMember error:', error);
+  } else {
+    devLog('[supabase] createMember id:', data?.id);
+  }
+  return { data, error };
+};
+
+export const updateMember = async (
+  id: string,
+  updates: Database['public']['Tables']['user_profiles']['Update']
+) => {
+  devLog('[supabase] updateMember id:', id, 'updates:', updates);
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update(updates)
+    .eq('id', id)
+    .single();
+  if (error) {
+    devError('[supabase] updateMember error:', error);
+  } else {
+    devLog('[supabase] updateMember updated id:', data?.id);
+  }
+  return { data, error };
+};
+
+export const deleteMember = async (id: string) => {
+  devLog('[supabase] deleteMember id:', id);
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .delete()
+    .eq('id', id)
+    .single();
+  if (error) {
+    devError('[supabase] deleteMember error:', error);
+  } else {
+    devLog('[supabase] deleteMember deleted id:', data?.id);
+  }
+  return { data, error };
+};
+
 // Real-time subscriptions
 import type {
   RealtimePostgresChangesPayload,

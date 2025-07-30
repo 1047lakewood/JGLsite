@@ -219,6 +219,153 @@ export const useGymnasts = () => {
   return { gymnasts, loading, error };
 };
 
+export interface Member {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: Database['public']['Enums']['user_role'];
+  gymId?: string;
+  gymName?: string;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  level?: string | null;
+  isActive: boolean;
+  totalPoints?: number | null;
+  membershipStatus?: Database['public']['Enums']['membership_status'] | null;
+  approvedByCoach?: boolean | null;
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export const useMembers = () => {
+  const { user } = useAuth();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMembers = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (!isSupabaseConfigured || user?.id?.startsWith('demo-')) {
+        const stored = localStorage.getItem('demoMembers');
+        if (stored) {
+          setMembers(JSON.parse(stored));
+          return;
+        }
+
+        const mockMembers: Member[] = [
+          {
+            id: 'member-1',
+            firstName: 'League',
+            lastName: 'Administrator',
+            email: 'admin@demo.com',
+            role: 'admin',
+            phone: '(555) 123-4567',
+            isActive: true,
+            createdAt: '2024-01-01',
+            lastLogin: '2024-03-15',
+          },
+          {
+            id: 'member-2',
+            firstName: 'Sarah',
+            lastName: 'Johnson',
+            email: 'coach@demo.com',
+            role: 'coach',
+            gymId: 'gym-1',
+            gymName: 'Elite Gymnastics Center',
+            phone: '(555) 234-5678',
+            isActive: true,
+            createdAt: '2024-01-15',
+            lastLogin: '2024-03-14',
+          },
+        ];
+
+        setMembers(mockMembers);
+        localStorage.setItem('demoMembers', JSON.stringify(mockMembers));
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select(
+          `*,
+          gym:gyms(*),
+          gymnast:gymnasts(*)`
+        )
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mapped: Member[] = (data || []).map((m) => ({
+        id: m.id,
+        firstName: m.first_name,
+        lastName: m.last_name,
+        email: m.email,
+        role: m.role,
+        gymId: m.gym_id || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gymName: (m as any).gym?.name,
+        phone: m.phone,
+        dateOfBirth: m.date_of_birth,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        level: (m as any).gymnast?.level,
+        isActive: m.is_active,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        totalPoints: (m as any).gymnast?.total_points,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        membershipStatus: (m as any).gymnast?.membership_status,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        approvedByCoach: (m as any).gymnast?.approved_by_coach,
+        createdAt: m.created_at,
+        lastLogin: m.updated_at,
+      }));
+
+      setMembers(mapped);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch members');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
+  const addMember = (member: Member) => {
+    setMembers((prev) => {
+      const updated = [...prev, member];
+      if (!isSupabaseConfigured || user?.id?.startsWith('demo-')) {
+        localStorage.setItem('demoMembers', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const updateMember = (member: Member) => {
+    setMembers((prev) => {
+      const updated = prev.map((m) => (m.id === member.id ? member : m));
+      if (!isSupabaseConfigured || user?.id?.startsWith('demo-')) {
+        localStorage.setItem('demoMembers', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const removeMember = (id: string) => {
+    setMembers((prev) => {
+      const updated = prev.filter((m) => m.id !== id);
+      if (!isSupabaseConfigured || user?.id?.startsWith('demo-')) {
+        localStorage.setItem('demoMembers', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  return { members, loading, error, refetch: fetchMembers, addMember, updateMember, removeMember };
+};
+
 export const useChallenges = () => {
   const [challenges, setChallenges] = useState<
     Database['public']['Tables']['challenges']['Row'][]

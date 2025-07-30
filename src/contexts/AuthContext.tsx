@@ -43,48 +43,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Demo user profiles
-const demoUsers: { [key: string]: UserProfile } = {
-  'admin@demo.com': {
-    id: 'demo-admin-id',
-    email: 'admin@demo.com',
-    first_name: 'League',
-    last_name: 'Administrator',
-    role: 'admin',
-    gym_id: null,
-    phone: null,
-    date_of_birth: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  'coach@demo.com': {
-    id: 'demo-coach-id',
-    email: 'coach@demo.com',
-    first_name: 'Sarah',
-    last_name: 'Johnson',
-    role: 'coach',
-    gym_id: 'demo-gym-id',
-    phone: null,
-    date_of_birth: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  'gymnast@demo.com': {
-    id: 'demo-gymnast-id',
-    email: 'gymnast@demo.com',
-    first_name: 'Emma',
-    last_name: 'Davis',
-    role: 'gymnast',
-    gym_id: 'demo-gym-id',
-    phone: null,
-    date_of_birth: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -230,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('[auth] Exception creating user profile:', createErr);
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('[auth] Error loading user profile:', err);
       console.log('[auth] No user profile found, continuing without profile data');
     } finally {
