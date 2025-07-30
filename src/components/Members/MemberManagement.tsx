@@ -28,6 +28,21 @@ interface Member {
   lastLogin?: string;
 }
 
+const toMemberProfile = (member: Member): MemberProfile => ({
+  id: member.id,
+  email: member.email,
+  first_name: member.firstName,
+  last_name: member.lastName,
+  role: member.role,
+  gym_id: member.gymId || null,
+  phone: member.phone || null,
+  date_of_birth: member.dateOfBirth || null,
+  is_active: member.isActive,
+  created_at: member.createdAt,
+  updated_at: member.lastLogin || new Date().toISOString(),
+  gym: null
+});
+
 export const MemberManagement: React.FC = () => {
   const { user } = useAuth();
   const {
@@ -105,7 +120,7 @@ export const MemberManagement: React.FC = () => {
       await updateMemberApi(memberId, { is_active: newStatus });
       await refetch();
     } else {
-      updateMemberLocal({ ...member, isActive: newStatus });
+      updateMemberLocal(toMemberProfile({ ...member, isActive: newStatus }));
     }
   };
 
@@ -139,21 +154,8 @@ export const MemberManagement: React.FC = () => {
         await updateMemberApi(editingMember.id, updates);
         await refetch();
       } else {
-        const updatedMember: MemberProfile = {
-          id: editingMember.id,
-          email: formData.email,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          role: formData.role,
-          gym_id: formData.gymId || null,
-          phone: formData.phone || null,
-          date_of_birth: formData.dateOfBirth || null,
-          is_active: editingMember.isActive,
-          created_at: editingMember.createdAt,
-          updated_at: new Date().toISOString(),
-          gym: null
-        };
-        updateMemberLocal(updatedMember);
+        const updated = toMemberProfile({ ...editingMember, ...formData });
+        updateMemberLocal(updated);
       }
       setEditingMember(null);
     } else {
@@ -178,21 +180,7 @@ export const MemberManagement: React.FC = () => {
         });
         await refetch();
       } else {
-        const memberProfile: MemberProfile = {
-          id: newMember.id,
-          email: newMember.email,
-          first_name: newMember.firstName,
-          last_name: newMember.lastName,
-          role: newMember.role,
-          gym_id: newMember.gymId || null,
-          phone: newMember.phone || null,
-          date_of_birth: newMember.dateOfBirth || null,
-          is_active: true,
-          created_at: newMember.createdAt,
-          updated_at: newMember.createdAt,
-          gym: null
-        };
-        addMember(memberProfile);
+        addMember(toMemberProfile(newMember));
       }
     }
     
